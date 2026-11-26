@@ -1,5 +1,5 @@
-# Contributions
+# 貢獻指引
 
-We don't have the bandwidth to review external pull requests right now, and we don't want PRs to languish, so we aren't accepting external contributions at this time.
+我們目前沒有足夠的頻寬來審查外部的 Pull Request (PR)。為了避免讓您的 PR 擱置，我們現階段不接受外部貢獻。
 
-If you have an idea or hit a pain point, please share it on our [discussions](https://github.com/googlecolab/google-colab-cli/discussions) page — the preferred place for issues and feature requests.
+如果您有任何想法或遇到任何痛點，歡迎到我們的 [討論區 (Discussions)](https://github.com/googlecolab/google-colab-cli/discussions) 頁面進行分享——這是提出問題（Issues）與功能建議（Feature Requests）的首選平台。

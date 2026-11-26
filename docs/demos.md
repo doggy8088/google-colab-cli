@@ -1,22 +1,24 @@
-# Colab CLI: Demo Walkthroughs
+# Colab CLI：示範與操作指引
 
-*Captured 2026-05-07 against a live Colab backend with `showboat` 0.6.1.*
+*擷取於 2026-05-07，對照真實 Colab 後端，並使用 `showboat` 0.6.1 進行錄製。*
 <!-- showboat-id: a24e677e-5052-4bec-8f82-36eb7a7859f9 -->
 
-Eleven scenarios that exercise common workflows, plus a final "bridging back to the browser" example. Every `colab` invocation below was actually executed; the text inside each `output` block was captured verbatim from stdout/stderr.
+以下提供 11 個演練常見工作流程的實用場景，以及最後一個「橋接回瀏覽器」的範例。下方的每個 `colab` 調用皆為真實執行；每個 `output` 區塊中的文字皆是逐字擷取自 stdout/stderr。
 
-**Methodology**
-- Auth: `--auth=adc`. To set up: `gcloud auth application-default login --scopes=openid,https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/userinfo.email,https://www.googleapis.com/auth/colaboratory`.
-- Accelerator: every session uses **CPU**. Provisioning real accelerators is gated by per-account quota and would not work for most readers; the workflows themselves are accelerator-agnostic, so where a demo's narrative mentions a GPU or TPU the prose flags the substitution.
-- Interactive subcommands — `colab auth`, `colab drivemount`, interactive `colab ssh`, and unpiped `colab repl` — are **not run** here because they require human interaction at a TTY. Demos that would normally use them include an inline note explaining what they do and the workflow continues with the non-interactive parts.
-- `enable_update_check` is set to `false` in `~/.config/colab-cli/settings.json` for the duration of recording so the daily upgrade banner doesn't pollute output.
-- `PYTHONWARNINGS=ignore` is set in the environment to suppress the ADC quota-project warning that `google.auth` emits on every call from end-user credentials.
+**錄製方法說明**
+- **身分驗證**：統一採用 `--auth=adc`。設定指令為：`gcloud auth application-default login --scopes=openid,https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/userinfo.email,https://www.googleapis.com/auth/colaboratory`。
+- **加速器**：本示範中的所有工作階段皆使用 **CPU**。配置真實的加速器受到個別帳戶配額（Quota）的限制，且對多數讀者而言可能無法直接執行；然而工作流程本身與加速器無關，因此在示範脈絡中若提及 GPU 或 TPU，段落中會特別註明「此處以 CPU 代替」。
+- **互動式子指令** —— 包含 `colab auth`、`colab drivemount`、互動式 `colab ssh`，以及未經管線傳輸的 `colab repl` —— **不在**此處執行，因為它們需要使用者在本地 TTY 終端機前進行互動。通常會使用到這些指令的示範會包含一條內聯說明以解釋其作用，並隨後以非互動式的方式繼續演練其餘工作流程。
+- 在錄製期間，`~/.config/colab-cli/settings.json` 中的 `enable_update_check` 已被暫時設定為 `false`，以防每日升級提示橫幅干擾輸出內容。
+- 環境變數中設定了 `PYTHONWARNINGS=ignore`，以抑制 `google.auth` 在每次使用終端使用者憑證呼叫時所發射的 ADC 配額專案警告。
 
-**Re-verifiability caveat**: this document is **not** re-verifiable with `showboat verify`. Each `colab new` produces a fresh server-assigned session endpoint (`m-s-...`), so the recorded output never matches a re-run exactly. Treat this as a one-time witness that the workflows succeeded as of the recording date.
+**重新驗證須知**：本文件**不支援**透過 `showboat verify` 進行自動化重新驗證。因為每次執行 `colab new` 都會產生一個全新、由伺服器分配的工作階段端點（`m-s-...`），故錄製的輸出內容不可能與重新執行的結果完全一致。請將此文件視為工作流程在錄製當下成功執行的真實見證。
 
-## Demo 1: Cloud-native scientist
+---
 
-Provision a session, run a JAX workload over a small dataset, then tear the session down. Demonstrates the headline pattern of `colab new` → `colab exec` → `colab stop`. (A full-fidelity run of this scenario would also call `colab auth` and `colab drivemount` so the JAX code could read from BigQuery and write to Drive — both interactive, see the skip note below — and would request a TPU instead of CPU.)
+## 示範 1：雲端原生科學家
+
+配置工作階段、在小型資料集上執行 JAX 工作負載，最後釋放工作階段。本範例展示了最核心、最典型的使用模式：`colab new` → `colab exec` → `colab stop`。（在真實環境中，此場景通常還會呼叫 `colab auth` 與 `colab drivemount` 以便 JAX 程式碼讀取 BigQuery 並將成果寫入雲端硬碟 Drive——這兩者皆需要互動，請參閱下方的跳過說明——且通常會請求 TPU 而非 CPU。）
 
 ```bash
 uv run colab --auth=adc new -s research
@@ -27,7 +29,7 @@ uv run colab --auth=adc new -s research
 [colab] Session READY.
 ```
 
-*Skipped:* `colab auth -s research` and `colab drivemount -s research`. Both require interactive TTY consent — `auth` prompts the user to visit an OAuth URL and paste back a verification code; `drivemount` prompts for an Enter keypress after the user grants consent in their browser. Verified separately in `integration/`.
+*已跳過步驟：* `colab auth -s research` 與 `colab drivemount -s research`。這兩者皆需要互動式的 TTY 授權同意流程——`auth` 會提示使用者造訪 OAuth 網址並貼回驗證碼；`drivemount` 則會在使用者於瀏覽器中授權同意後提示按下 Enter 鍵。這已在 `integration/` 中單獨進行驗證。
 
 ```bash
 uv run colab --auth=adc install -s research jax 2>&1 | tail -20
@@ -43,7 +45,7 @@ cat <<'EOF' | uv run colab --auth=adc exec -s research
 import jax, jax.numpy as jnp
 import numpy as np
 
-# (BigQuery substituted with synthetic data — would normally use:
+# (BigQuery 已替換為合成數據 —— 通常會使用：
 #   df = bigquery.Client().query('SELECT * FROM bigquery-public-data.ml_datasets.iris LIMIT 100').to_dataframe())
 data = np.random.RandomState(0).randn(100, 4)
 
@@ -69,9 +71,11 @@ uv run colab --auth=adc stop -s research
 [colab] Session terminated.
 ```
 
-## Demo 2: Fast iteration on GPU
+---
 
-A typical model-training cycle: provision → install dependencies → run a training script → check status → download the resulting checkpoint. The script here is a 1-layer linear regression on synthetic data so it finishes in a few seconds on CPU; substitute your real training code and `--gpu A100` for a production run.
+## 示範 2：在 GPU 上快速疊代
+
+一個典型的模型訓練週期：配置工作階段 → 安装依賴套件 → 執行訓練腳本 → 檢查狀態 → 下載產生的 Checkpoint 權重。此處的腳本是針對合成資料進行的 1 層線性回歸，因此在 CPU 上數秒內即可完成；在實際生產環境中，請替換為您的真實訓練程式碼並加上 `--gpu A100`。
 
 ```bash
 uv run colab --auth=adc new -s trainer
@@ -136,9 +140,11 @@ uv run colab --auth=adc stop -s trainer
 [colab] Session terminated.
 ```
 
-## Demo 3: Interactive troubleshooting (piped)
+---
 
-`colab exec` and `colab repl` accept piped stdin and exit on EOF, so they compose well with shell pipelines and other CLI tools. This demo lists `/content`, creates and removes a scratch file, and then queries free space from a one-shot REPL.
+## 示範 3：互動式偵錯（管線傳輸）
+
+`colab exec` 與 `colab repl` 皆接受管線 `stdin` 並在 EOF 時結束退出，因此它們能與 Shell 管線及其他 CLI 工具完美整合。此示範列出 `/content` 內容、建立並刪除臨時檔案，最後透過單次 REPL 查詢剩餘空間。
 
 ```bash
 uv run colab --auth=adc new -s debug
@@ -149,7 +155,7 @@ uv run colab --auth=adc new -s debug
 [colab] Session READY.
 ```
 
-*Note:* for an interactive shell on the VM use `colab ssh -s debug` (interactive, so not run here); one-shot shell commands run with `colab ssh -s debug -- df -h /content`, or, where ssh can't work, piped to `colab exec` with IPython's `!` prefix, e.g. `echo '!df -h /content' | colab exec -s debug` (neither is part of this recording).
+*注意：* 若要在虛擬機器上使用互動式 shell，請用 `colab ssh -s debug`（屬互動式，因此不在此處執行）；單次 shell 指令可用 `colab ssh -s debug -- df -h /content` 執行，或在 ssh 無法使用時，以 IPython 的 `!` 前綴管線傳給 `colab exec`，例如 `echo '!df -h /content' | colab exec -s debug`（兩者都不在本段錄影中）。
 
 ```bash
 uv run colab --auth=adc ls -s debug /content
@@ -194,9 +200,11 @@ uv run colab --auth=adc stop -s debug
 [colab] Session terminated.
 ```
 
-## Demo 4: Multi-modal output (plots & notebooks)
+---
 
-Demonstrates plot redirection (`--output-image`) and notebook execution (`colab exec -f file.ipynb` writes outputs back into `<name>_output.ipynb`).
+## 示範 4：多模態輸出（圖表與筆記本）
+
+本範例展示了圖表重新導向（`--output-image`）以及 Jupyter 筆記本執行（`colab exec -f file.ipynb` 會將執行結果寫回至 `<主檔名>_output.ipynb` 檔案中）。
 
 ```bash
 uv run colab --auth=adc new -s reporter
@@ -223,10 +231,10 @@ EOF
 ```
 
 ```bash {image}
-![Sine wave plot generated on the Colab VM and saved to /tmp/sine.png](/tmp/sine.png)
+![在 Colab VM 上生成並儲存至 /tmp/sine.png 的正弦波圖表](/tmp/sine.png)
 ```
 
-![Sine wave plot generated on the Colab VM and saved to /tmp/sine.png](3042ab12-2026-05-07.png)
+![在 Colab VM 上生成並儲存至 /tmp/sine.png 的正弦波圖表](3042ab12-2026-05-07.png)
 
 ```bash
 uv run colab --auth=adc exec -s reporter -f /tmp/analysis.ipynb && ls /tmp/analysis_output.ipynb
@@ -262,9 +270,11 @@ uv run colab --auth=adc stop -s reporter
 [colab] Session terminated.
 ```
 
-## Demo 5: Bulk data via GCS
+---
 
-Pull a batch of objects down from a Google Cloud Storage bucket, transform them on the VM, and pull the results back. A full-fidelity workflow is `colab new --gpu L4` -> `colab auth` (so VM-side `gcloud` works) -> `gcloud storage cp gs://bucket/raw/*.jpg /content/images/` (as a `!`-prefixed shell command piped to `colab exec`) -> install pillow/torchvision -> process -> download. We skip the auth step here (interactive; the user has to click through OAuth) and substitute synthetic image generation in place of the GCS pull, which keeps the input -> install -> batch-process -> download shape intact.
+## 示範 5：透過 GCS 處理大量數據
+
+從 Google Cloud Storage 儲存桶中整批拉取物件、在 VM 上進行轉換，並將處理結果拉回本地。最原汁原味的工作流程為：`colab new --gpu L4` → `colab auth`（啟用 VM 端的 `gcloud` 驗證） → `gcloud storage cp gs://bucket/raw/*.jpg /content/images/`（以加上 `!` 前綴的 shell 指令管線傳給 `colab exec` 執行） → 安裝 Pillow/Torchvision → 批次處理 → 下載成果。在此處我們跳過了身分驗證步驟（因其具互動性，需要使用者點擊同意），並以合成圖片生成來代替從 GCS 下載，但依然完整保留了「輸入 → 安裝 → 批次處理 → 下載」的流程架構。
 
 ```bash
 uv run colab --auth=adc new -s data-proc
@@ -286,19 +296,19 @@ Installation Complete (via uv)!
 
 ```bash
 cat <<'EOF' | uv run colab --auth=adc exec -s data-proc
-# (would normally pull from GCS via 'gcloud storage cp gs://my-bucket/raw_data/*.jpg')
+# (通常會透過 'gcloud storage cp gs://my-bucket/raw_data/*.jpg' 從 GCS 拉取數據)
 import os, zipfile
 from PIL import Image, ImageFilter
 os.makedirs('/content/images', exist_ok=True)
 os.makedirs('/content/processed', exist_ok=True)
-# Generate 10 synthetic input images
+# 產生 10 張合成輸入圖片
 for i in range(10):
     Image.new('RGB', (64, 64), (i * 25, 100, 200 - i * 15)).save(f'/content/images/img_{i:02d}.jpg')
-# Process: blur each
+# 處理：對每張圖片進行高斯模糊
 for src in sorted(os.listdir('/content/images')):
     img = Image.open(f'/content/images/{src}').filter(ImageFilter.GaussianBlur(2))
     img.save(f'/content/processed/{src}')
-# Zip results
+# 壓縮處理結果
 with zipfile.ZipFile('/content/processed/batch.zip', 'w') as z:
     for f in sorted(os.listdir('/content/processed')):
         if f.endswith('.jpg'):
@@ -330,9 +340,11 @@ uv run colab --auth=adc stop -s data-proc
 [colab] Session terminated.
 ```
 
-## Demo 6: Resource check & subscription
+---
 
-Inspect a long-running session, then export its history as a notebook for archival. (`colab pay`, which opens `https://colab.research.google.com/signup` in the system browser to manage compute units, would normally fit here too — we don't invoke it because it would pop a browser window in the recording environment.)
+## 示範 6：資源檢查與訂閱
+
+檢查一個長時間運作的工作階段，隨後將其歷史紀錄匯出為 Jupyter 筆記本以供存檔。（`colab pay` 能在系統瀏覽器中開啟 `https://colab.research.google.com/signup` 以便使用者管理運算單位，通常也屬於此流程的一環——但在錄製環境中我們並未呼叫它，以防跳出瀏覽器視窗。）
 
 ```bash
 uv run colab --auth=adc new -s long-running
@@ -377,9 +389,11 @@ uv run colab --auth=adc stop -s long-running
 [colab] Session terminated.
 ```
 
-## Demo 7: Reproducible research
+---
 
-Quick exploration via piped repl, file inspection via piped exec, then capture the whole session as a notebook artifact via `colab log -o <name>.ipynb`. The notebook is replayable in the Colab UI.
+## 示範 7：可重現的研究
+
+透過管線 REPL 進行快速探索、透過管線 exec 進行檔案內容檢查，最後透過 `colab log -o <名稱>.ipynb` 將整個工作階段擷取為筆記本成品。該筆記本可直接在 Colab 網頁 UI 中重新執行。
 
 ```bash
 uv run colab --auth=adc new -s pivot
@@ -447,9 +461,11 @@ uv run colab --auth=adc stop -s pivot
 [colab] Session terminated.
 ```
 
-## Demo 8: Local + cloud hybrid
+---
 
-Run a local script against the remote VM and pull a result back. The full-fidelity version of this demo also calls `colab drivemount` to make Google Drive available at `/content/drive` on the VM (so the script can read shared data); `drivemount` is interactive and skipped here. The kept portion — `colab exec -f local_script.py` running a script that lives on your laptop against a kernel that lives in Colab — is the workflow worth highlighting.
+## 示範 8：本地與雲端混合架構
+
+針對遠端 VM 執行一個本地的腳本，並將產生的結果拉回本地。此範例的完整實務版本通常也會呼叫 `colab drivemount` 以在虛擬機器上的 `/content/drive` 提供 Google 雲端硬碟（以便腳本讀取共享資料）；由於 `drivemount` 需要互動，此處將其跳過。這裡保留並重點展示了——「在您的筆記型電腦上修改腳本，並直接透過 `colab exec -f local_script.py` 對 Colab 中的核心執行該腳本」這一極具價值的混合工作流程。
 
 ```bash
 uv run colab --auth=adc new -s hybrid
@@ -480,9 +496,11 @@ uv run colab --auth=adc stop -s hybrid
 [colab] Session terminated.
 ```
 
-## Demo 9: Multi-session orchestration
+---
 
-Run multiple sessions concurrently, list them, inspect one, stop one. The two sessions here are both CPU; in practice you'd more likely have a mix of accelerator types (e.g. one TPU for training, one GPU for evaluation).
+## 示範 9：多工作階段編排
+
+同時執行多個工作階段、列出其狀態、檢查其中一個，最後停止其中一個。此處建立的兩個工作階段皆為 CPU；在實務上，您更有可能是混用多種加速器類型（例如一個 TPU 用於訓練，另一個 GPU 用於評估）。
 
 ```bash
 uv run colab --auth=adc new -s tpu-cluster && uv run colab --auth=adc new -s gpu-eval
@@ -523,9 +541,11 @@ uv run colab --auth=adc stop -s gpu-eval && uv run colab --auth=adc stop -s tpu-
 [colab] Session terminated.
 ```
 
-## Demo 10: One-shot pipeline
+---
 
-Chain several commands with `&&` so any failure aborts. The script here is a tiny stand-in (writes a JSON result to `/content`) so the chain runs in a few seconds on CPU; the typical real version would be `--gpu A100` plus a heavier dependency like `flash-attn`.
+## 示範 10：一鍵式自動化管線
+
+使用 `&&` 將多個指令串聯，使任何一步失敗時即刻中止整個流程。此處的腳本是一個極小的代位物件（將 JSON 結果寫入 `/content`），因此整條鏈在 CPU 上數秒內即可執行完畢；典型的實務版本會請求 `--gpu A100` 並安裝如 `flash-attn` 等繁重的依賴項目。
 
 ```bash
 uv run colab --auth=adc new -s pipeline \
@@ -548,9 +568,11 @@ Wrote results.json: {'status': 'ok', 'computed_at': '2026-05-07T23:22:34.924350Z
 [colab] Session terminated.
 ```
 
-## Demo 11: Reproducible environment
+---
 
-Upload a `requirements.txt` to the VM, install via `-r`, then verify the version on the VM matches what we asked for.
+## 示範 11：可重現的環境
+
+將本地的 `requirements.txt` 上傳至虛擬機器、透過 `-r` 選項進行安裝，最後驗證虛擬機器上安裝的套件版本是否與我們所請求的一致。
 
 ```bash
 uv run colab --auth=adc new -s env-test
@@ -586,9 +608,11 @@ echo 'import requests; print("requests:", requests.__version__)' | uv run colab 
 requests: 2.31.0
 ```
 
-## Bridging back to the browser
+---
 
-`colab url -s <name>` prints a URL that, when opened in a browser, makes the Colab frontend connect to the existing colab-cli session instead of provisioning a fresh VM. By default it just prints the URL (pipeable, e.g. `colab url -s s1 | xclip`); `--open` would open it directly in the system browser.
+## 橋接回瀏覽器
+
+`colab url -s <工作階段名稱>` 會印出一個網址，當您在瀏覽器中將其開啟時，Colab 的網頁前端將會自動連接至您現有的 `colab-cli` 工作階段，而不會配置全新的虛擬機器。預設情況下，它僅會印出網址（可透過管線傳輸，例如 `colab url -s s1 | xclip`）；加上 `--open` 選項則會直接在您的系統預設瀏覽器中將其開啟。
 
 ```bash
 uv run colab --auth=adc url -s env-test
